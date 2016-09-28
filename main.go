@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Shopify/sarama"
-	log "github.com/Sirupsen/logrus"
 	"github.com/larskluge/babl-server/kafka"
 )
 
@@ -15,11 +16,15 @@ const (
 	Topic     = "logs.raw"
 	Partition = 0
 	LastN     = 1000
+	Cols      = 4
+	Padding   = 1
 )
 
 var (
 	Warning = regexp.MustCompile("(?i)warn|overloaded")
 	Error   = regexp.MustCompile("(?i)error|panic|fail")
+
+	ColW = make([]int, Cols-1)
 )
 
 type Msg struct {
@@ -69,9 +74,28 @@ func main() {
 			m.Message = string(n)
 		}
 
-		fn := logLevelFn(m)
-		fn("%s %s  %s", m.Hostname, AppName(m), m.Message)
+		log(logLevel(m), m.Hostname, AppName(m), m.Message)
 	}
+}
+
+func log(entries ...string) {
+	if Cols != len(entries) {
+		panic("Adjust Cols")
+	}
+	for i, entry := range entries {
+		w := 0
+
+		// do not adjust col width for last col
+		if i < Cols-1 {
+			if len(entry) > ColW[i] {
+				ColW[i] = len(entry)
+			}
+			w = ColW[i] + Padding
+		}
+
+		fmt.Printf("%-"+strconv.Itoa(w)+"s", entry)
+	}
+	fmt.Println()
 }
 
 func AppName(m Msg) string {
@@ -89,13 +113,13 @@ func AppName(m Msg) string {
 	return app
 }
 
-func logLevelFn(m Msg) func(string, ...interface{}) {
+func logLevel(m Msg) string {
 	if Error.MatchString(m.Message) {
-		return log.Errorf
+		return "ERRO"
 	} else if Warning.MatchString(m.Message) {
-		return log.Warnf
+		return "WARN"
 	} else {
-		return log.Infof
+		return "INFO"
 	}
 }
 
