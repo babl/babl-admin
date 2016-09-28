@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	Warning = regexp.MustCompile("warn|overloaded")
-	Error   = regexp.MustCompile("error|panic|fail")
+	Warning = regexp.MustCompile("(?i)warn|overloaded")
+	Error   = regexp.MustCompile("(?i)error|panic|fail")
 )
 
 type Msg struct {
@@ -80,7 +80,7 @@ func AppName(m Msg) string {
 		app = m.ContainerName
 
 		// strip instance id
-		r := regexp.MustCompile("^([^\\.]+\\.\\d+)\\.\\w+$")
+		r := regexp.MustCompile(`^([^\.]+\.\d+)\.\w+$`)
 		matches := r.FindStringSubmatch(app)
 		if matches != nil {
 			app = matches[1]
