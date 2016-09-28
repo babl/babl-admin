@@ -14,7 +14,7 @@ const (
 	Broker    = "v5.babl.sh:9092"
 	Topic     = "logs.raw"
 	Partition = 0
-	LastN     = 100
+	LastN     = 1000
 )
 
 var (
@@ -70,7 +70,7 @@ func main() {
 		}
 
 		fn := logLevelFn(m)
-		fn("%s %s %s", m.Hostname, AppName(m), m.Message)
+		fn("%s %s  %s", m.Hostname, AppName(m), m.Message)
 	}
 }
 
