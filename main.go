@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Shopify/sarama"
+	"github.com/fatih/color"
 	"github.com/larskluge/babl-server/kafka"
 )
 
@@ -16,7 +17,7 @@ const (
 	Topic     = "logs.raw"
 	Partition = 0
 	LastN     = 1000
-	Cols      = 4
+	Cols      = 3
 	Padding   = 1
 )
 
@@ -74,7 +75,15 @@ func main() {
 			m.Message = string(n)
 		}
 
-		log(logLevel(m), m.Hostname, AppName(m), m.Message)
+		level := logLevel(m)
+		switch level {
+		case 'E':
+			color.Set(color.FgRed)
+		case 'W':
+			color.Set(color.FgYellow)
+		}
+		log(m.Hostname, AppName(m), m.Message)
+		color.Unset()
 	}
 }
 
@@ -115,13 +124,13 @@ func AppName(m Msg) string {
 	return app
 }
 
-func logLevel(m Msg) string {
+func logLevel(m Msg) rune {
 	if Error.MatchString(m.Message) {
-		return "ERRO"
+		return 'E'
 	} else if Warning.MatchString(m.Message) {
-		return "WARN"
+		return 'W'
 	} else {
-		return "INFO"
+		return 'I'
 	}
 }
 
