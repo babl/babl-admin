@@ -109,6 +109,8 @@ func AppName(m Msg) string {
 		if matches != nil {
 			app = matches[1]
 		}
+	} else if strings.HasPrefix(app, "sshd@") {
+		app = "sshd"
 	}
 	return app
 }

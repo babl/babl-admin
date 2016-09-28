@@ -21,3 +21,12 @@ func TestAppNameForServiceName(t *testing.T) {
 		t.Errorf("config mismatch: want %s; got %s", expected, actual)
 	}
 }
+
+func TestAppNameForSshd(t *testing.T) {
+	m := Msg{Unit: "sshd@24-10.19.0.5:8422-85.179.173.138:56805"}
+	actual := AppName(m)
+	expected := "sshd"
+	if expected != actual {
+		t.Errorf("config mismatch: want %s; got %s", expected, actual)
+	}
+}
