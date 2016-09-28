@@ -17,6 +17,11 @@ const (
 	LastN     = 100
 )
 
+var (
+	Warning = regexp.MustCompile("warn|overloaded")
+	Error   = regexp.MustCompile("error|panic|fail")
+)
+
 type Msg struct {
 	Hostname      string          `json:"_HOSTNAME"`
 	Unit          string          `json:"_SYSTEMD_UNIT"`
@@ -64,7 +69,8 @@ func main() {
 			m.Message = string(n)
 		}
 
-		log.Printf("%s %s %s", m.Hostname, AppName(m), m.Message)
+		fn := logLevelFn(m)
+		fn("%s %s %s", m.Hostname, AppName(m), m.Message)
 	}
 }
 
@@ -81,6 +87,16 @@ func AppName(m Msg) string {
 		}
 	}
 	return app
+}
+
+func logLevelFn(m Msg) func(string, ...interface{}) {
+	if Error.MatchString(m.Message) {
+		return log.Errorf
+	} else if Warning.MatchString(m.Message) {
+		return log.Warnf
+	} else {
+		return log.Infof
+	}
 }
 
 func check(err error) {
