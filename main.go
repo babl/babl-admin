@@ -23,7 +23,7 @@ const (
 
 var (
 	Warning = regexp.MustCompile("(?i)warn|overloaded")
-	Error   = regexp.MustCompile("(?i)error|panic|fail")
+	Error   = regexp.MustCompile("(?i)error|panic|fail|killed")
 
 	ColW = make([]int, Cols-1)
 )
