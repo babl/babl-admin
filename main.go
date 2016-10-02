@@ -29,11 +29,12 @@ var (
 )
 
 type Msg struct {
-	Hostname      string          `json:"_HOSTNAME"`
-	Unit          string          `json:"_SYSTEMD_UNIT"`
-	ContainerName string          `json:"CONTAINER_NAME"`
-	MessageRaw    json.RawMessage `json:"MESSAGE"`
-	Message       string
+	Hostname         string          `json:"_HOSTNAME"`
+	SystemdUnit      string          `json:"_SYSTEMD_UNIT"`
+	SyslogIdentifier string          `json:"SYSLOG_IDENTIFIER"`
+	ContainerName    string          `json:"CONTAINER_NAME"`
+	MessageRaw       json.RawMessage `json:"MESSAGE"`
+	Message          string
 }
 
 func main() {
@@ -108,7 +109,10 @@ func log(entries ...string) {
 }
 
 func AppName(m Msg) string {
-	app := strings.TrimSuffix(m.Unit, ".service")
+	if m.SyslogIdentifier != "" {
+		return m.SyslogIdentifier
+	}
+	app := strings.TrimSuffix(m.SystemdUnit, ".service")
 	if app == "docker" {
 		app = m.ContainerName
 
