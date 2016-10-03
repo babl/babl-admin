@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -26,6 +27,10 @@ var (
 	Error   = regexp.MustCompile("(?i)error|panic|fail|killed")
 
 	ColW = make([]int, Cols-1)
+
+	flagDeploy  = flag.String("deploy", "", "Module to deploy, e.g. larskluge/string-upcase")
+	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
+	flagMemory  = flag.Int("mem", 16, "Memory allowance")
 )
 
 type Msg struct {
@@ -38,6 +43,12 @@ type Msg struct {
 }
 
 func main() {
+	flag.Parse()
+	if *flagDeploy != "" {
+		Deploy(*flagDeploy, *flagVersion, *flagMemory)
+		return
+	}
+
 	client := *kafka.NewClient([]string{Broker}, "babl-admin", true)
 	defer client.Close()
 
