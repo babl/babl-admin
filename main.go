@@ -13,6 +13,7 @@ import (
 	"github.com/larskluge/babl-server/kafka"
 )
 
+//Broker url
 const (
 	Broker    = "v5.babl.sh:9092"
 	Topic     = "logs.raw"
@@ -22,6 +23,7 @@ const (
 	Padding   = 1
 )
 
+//Warning log level
 var (
 	Warning = regexp.MustCompile("(?i)warn|overloaded")
 	Error   = regexp.MustCompile("(?i)error|panic|fail|killed|exception")
@@ -31,8 +33,10 @@ var (
 	flagDeploy  = flag.String("deploy", "", "Module to deploy, e.g. larskluge/string-upcase")
 	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
+	flagMonitor = flag.String("monitor", "", "cluster stats (lag)")
 )
 
+//Msg structure
 type Msg struct {
 	Hostname         string          `json:"_HOSTNAME"`
 	SystemdUnit      string          `json:"_SYSTEMD_UNIT"`
@@ -44,8 +48,22 @@ type Msg struct {
 
 func main() {
 	flag.Parse()
+
 	if *flagDeploy != "" {
 		Deploy(*flagDeploy, *flagVersion, *flagMemory)
+		return
+	}
+
+	if *flagMonitor == "lag" {
+		l := Lag{interval: 1}
+		if status, msg := l.ping(); status == true {
+			clusters := l.getCluster()
+			for _, c := range clusters {
+				l.start(c)
+			}
+		} else {
+			fmt.Println("Sorry Cant do!", msg)
+		}
 		return
 	}
 
@@ -94,15 +112,15 @@ func main() {
 		case 'W':
 			color.Set(color.FgYellow)
 		}
-		log(m.Hostname, AppName(m), m.Message)
+		log(m.Hostname, appName(m), m.Message)
 		color.Unset()
 	}
 }
 
 func log(entries ...string) {
-	if Cols != len(entries) {
-		panic("Adjust Cols")
-	}
+	// if Cols != len(entries) {
+	// 	panic("Adjust Cols")
+	// }
 	for i, entry := range entries {
 		w := 0
 
@@ -119,7 +137,7 @@ func log(entries ...string) {
 	fmt.Println()
 }
 
-func AppName(m Msg) string {
+func appName(m Msg) string {
 	if m.SyslogIdentifier != "" {
 		return m.SyslogIdentifier
 	}
