@@ -39,3 +39,13 @@ func TestAppNameForSyslogIdentifier(t *testing.T) {
 		t.Errorf("config mismatch: want %s; got %s", expected, actual)
 	}
 }
+
+func TestGroupPartionStatus(t *testing.T) {
+	partitionCount := 10
+	partitions := []PartitionT{{Status: "OK"}, {Status: "STOP"}}
+	actual := groupPartionStatus(partitionCount, partitions)
+	expected := "10 [OK:1,STOP:1]"
+	if expected != actual {
+		t.Errorf("config mismatch: want %s; got %s", expected, actual)
+	}
+}
