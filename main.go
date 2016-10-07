@@ -112,15 +112,15 @@ func main() {
 		case 'W':
 			color.Set(color.FgYellow)
 		}
-		log(m.Hostname, appName(m), m.Message)
+		log(m.Hostname, AppName(m), m.Message)
 		color.Unset()
 	}
 }
 
 func log(entries ...string) {
-	// if Cols != len(entries) {
-	// 	panic("Adjust Cols")
-	// }
+	if Cols != len(entries) {
+		panic("Adjust Cols")
+	}
 	for i, entry := range entries {
 		w := 0
 
@@ -137,7 +137,8 @@ func log(entries ...string) {
 	fmt.Println()
 }
 
-func appName(m Msg) string {
+//AppName...
+func AppName(m Msg) string {
 	if m.SyslogIdentifier != "" {
 		return m.SyslogIdentifier
 	}
