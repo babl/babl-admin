@@ -5,20 +5,23 @@ import (
 	"flag"
 	"fmt"
 	"regexp"
-	"strconv"
+	// "strconv"
 	"strings"
 
-	"github.com/Shopify/sarama"
+	// "github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fatih/color"
+	// "github.com/fatih/color"
+	"github.com/golang/protobuf/proto"
 	"github.com/larskluge/babl-server/kafka"
+	. "github.com/larskluge/babl-server/utils"
+	pbm "github.com/larskluge/babl/protobuf/messages"
+	"gopkg.in/bsm/sarama-cluster.v2"
 )
 
 //Broker url
 const (
 	Broker = "v5.babl.sh:9092"
 	// Topic  = "logs.raw"
-	Topic     = "babl.larskluge.RenderWebsite.IO"
 	Partition = 0
 	LastN     = 1000
 	Cols      = 3
@@ -97,7 +100,7 @@ func main() {
 	// client := *kafka.NewClient([]string{Broker}, "babl-admin", true)
 	clientgroup := kafka.NewClientGroup([]string{Broker}, "babl-admin", true)
 	defer (*clientgroup).Close()
-	parseGroup(clientgroup, []Topic)
+	parseGroup(clientgroup, []string{"babl.larskluge.StringUpcase.IO", "babl.larskluge.StringUpcase.Ping"})
 }
 
 // func log(entries ...string) {
@@ -131,73 +134,58 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 		log.WithFields(log.Fields{"key": data.Key}).Debug("Request recieved in module's topic/group")
 
 		rid := SplitLast(data.Key, ".")
-		async := false
+
 		res := "error"
-		var msg []byte
 		method := SplitLast(data.Topic, ".")
 		switch method {
 		case "IO":
 			in := &pbm.BinRequest{}
 			err := proto.Unmarshal(data.Value, in)
-			Check(err)
-			_, async = in.Env["BABL_ASYNC"]
-			delete(in.Env, "BABL_ASYNC") // worker needs to process job synchronously
-			if len(in.Env) == 0 {
-				in.Env = map[string]string{}
-			}
-			in.Env["BABL_RID"] = rid
-			out, err := IO(in, MaxKafkaMessageSize)
-			Check(err)
-			if out.Exitcode == 0 {
-				res = "success"
-			}
-			msg, err = proto.Marshal(out)
-			Check(err)
+			check(err)
+			log.WithFields(log.Fields{"rid": rid, "data": in}).Debug("IO:")
+			res = "success"
 		case "Ping":
 			in := &pbm.Empty{}
 			err := proto.Unmarshal(data.Value, in)
-			Check(err)
-			out, err := Ping(in)
-			Check(err)
+			check(err)
+			log.WithFields(log.Fields{"rid": rid, "data": in}).Debug("PING:")
 			res = "success"
-			msg, err = proto.Marshal(out)
-			Check(err)
 		}
 		data.Processed <- res
 	}
 }
 
-func parseTopic(msg *sarama.ConsumerMessage) {
-	data := *kafka.ConsumerData{Key: string(msg.Key), Value: msg.Value}
-	logrus.WithFields(logrus.Fields{"topic": Topic, "partition": msg.Partition, "offset": msg.Offset, "key": data.Key, "value": string(data.Value), "value size": len(data.Value), "rid": data.Key}).Info("New Message Received")
-}
+// func parseTopic(msg *sarama.ConsumerMessage) {
+// 	data := *kafka.ConsumerData{Key: string(msg.Key), Value: msg.Value}
+// 	log.WithFields(log.Fields{"topic": Topic, "partition": msg.Partition, "offset": msg.Offset, "key": data.Key, "value": string(data.Value), "value size": len(data.Value), "rid": data.Key}).Info("New Message Received")
+// }
 
-func parseRaw(msg *sarama.ConsumerMessage) {
-	var m Msg
-	err := json.Unmarshal(msg.Value, &m)
-	check(err)
+// func parseRaw(msg *sarama.ConsumerMessage) {
+// 	var m Msg
+// 	err := json.Unmarshal(msg.Value, &m)
+// 	check(err)
 
-	// MESSAGE can be a string or []byte which represents a string; bug in journald/kafka-manager somehow
-	var s string
-	err = json.Unmarshal(m.MessageRaw, &s)
-	if err == nil {
-		m.Message = s
-	} else {
-		var n []byte
-		err = json.Unmarshal(m.MessageRaw, &n)
-		check(err)
-		m.Message = string(n)
-	}
-	level := logLevel(m)
-	switch level {
-	case 'E':
-		color.Set(color.FgRed)
-	case 'W':
-		color.Set(color.FgYellow)
-	}
-	log(m.Hostname, AppName(m), m.Message)
-	color.Unset()
-}
+// 	// MESSAGE can be a string or []byte which represents a string; bug in journald/kafka-manager somehow
+// 	var s string
+// 	err = json.Unmarshal(m.MessageRaw, &s)
+// 	if err == nil {
+// 		m.Message = s
+// 	} else {
+// 		var n []byte
+// 		err = json.Unmarshal(m.MessageRaw, &n)
+// 		check(err)
+// 		m.Message = string(n)
+// 	}
+// 	level := logLevel(m)
+// 	switch level {
+// 	case 'E':
+// 		color.Set(color.FgRed)
+// 	case 'W':
+// 		color.Set(color.FgYellow)
+// 	}
+// 	log(m.Hostname, AppName(m), m.Message)
+// 	color.Unset()
+// }
 
 //AppName extraction func...
 func AppName(m Msg) string {
