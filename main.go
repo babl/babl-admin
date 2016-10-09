@@ -25,7 +25,7 @@ const (
 
 //Warning log level
 var (
-	Warning = regexp.MustCompile("(?i)warn|overloaded")
+	Warning = regexp.MustCompile("(?i)warn|overloaded|timeout")
 	Error   = regexp.MustCompile("(?i)error|panic|fail|killed|exception")
 
 	ColW = make([]int, Cols-1)
