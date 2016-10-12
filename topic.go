@@ -1,21 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
-	"fmt"
-	"regexp"
-	// "strconv"
-	"strings"
-
-	// "github.com/Shopify/sarama"
+	_ "fmt"
 	log "github.com/Sirupsen/logrus"
-	// "github.com/fatih/color"
+	_ "github.com/fatih/color"
 	"github.com/golang/protobuf/proto"
 	"github.com/larskluge/babl-server/kafka"
-	. "github.com/larskluge/babl/bablutils"
+	. "github.com/larskluge/babl-server/utils"
 	pbm "github.com/larskluge/babl/protobuf/messages"
 	"gopkg.in/bsm/sarama-cluster.v2"
+	_ "strings"
 )
 
 func ParseTopic(Topic string) {
@@ -77,13 +71,13 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 		case "IO":
 			in := &pbm.BinRequest{}
 			err := proto.Unmarshal(data.Value, in)
-			check(err)
+			Check(err)
 			log.WithFields(log.Fields{"rid": rid, "data": in}).Debug("IO:")
 			res = "success"
 		case "Ping":
 			in := &pbm.Empty{}
 			err := proto.Unmarshal(data.Value, in)
-			check(err)
+			Check(err)
 			log.WithFields(log.Fields{"rid": rid, "data": in}).Debug("PING:")
 			res = "success"
 		}

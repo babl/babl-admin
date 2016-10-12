@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/fatih/color"
 	"github.com/larskluge/babl-server/kafka"
+	. "github.com/larskluge/babl-server/utils"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -42,13 +45,13 @@ func ParseRaw() {
 	defer client.Close()
 
 	consumer, err := sarama.NewConsumerFromClient(client)
-	check(err)
+	Check(err)
 	defer consumer.Close()
 
 	offsetNewest, err := client.GetOffset(Topic, Partition, sarama.OffsetNewest)
-	check(err)
+	Check(err)
 	offsetOldest, err := client.GetOffset(Topic, Partition, sarama.OffsetOldest)
-	check(err)
+	Check(err)
 
 	offset := offsetNewest - LastN
 	if offset < 0 || offset < offsetOldest {
@@ -56,37 +59,18 @@ func ParseRaw() {
 	}
 
 	cp, err := consumer.ConsumePartition(Topic, Partition, offset)
-	check(err)
+	Check(err)
 	defer cp.Close()
 
 	for msg := range cp.Messages() {
 		parseMessage(msg)
 	}
 }
-func log(entries ...string) {
-	if Cols != len(entries) {
-		panic("Adjust Cols")
-	}
-	for i, entry := range entries {
-		w := 0
-
-		// do not adjust col width for last col
-		if i < Cols-1 {
-			if len(entry) > ColW[i] {
-				ColW[i] = len(entry)
-			}
-			w = ColW[i] + Padding
-		}
-
-		fmt.Printf("%-"+strconv.Itoa(w)+"s", entry)
-	}
-	fmt.Println()
-}
 
 func parseMessage(msg *sarama.ConsumerMessage) {
 	var m Msg
 	err := json.Unmarshal(msg.Value, &m)
-	check(err)
+	Check(err)
 
 	// MESSAGE can be a string or []byte which represents a string; bug in journald/kafka-manager somehow
 	var s string
@@ -96,7 +80,7 @@ func parseMessage(msg *sarama.ConsumerMessage) {
 	} else {
 		var n []byte
 		err = json.Unmarshal(m.MessageRaw, &n)
-		check(err)
+		Check(err)
 		m.Message = string(n)
 	}
 	level := logLevel(m)
@@ -106,7 +90,7 @@ func parseMessage(msg *sarama.ConsumerMessage) {
 	case 'W':
 		color.Set(color.FgYellow)
 	}
-	log(m.Hostname, AppName(m), m.Message)
+	logRaw(m.Hostname, AppName(m), m.Message)
 	color.Unset()
 }
 
@@ -128,6 +112,26 @@ func AppName(m Msg) string {
 		app = "sshd"
 	}
 	return app
+}
+
+func logRaw(entries ...string) {
+	if Cols != len(entries) {
+		panic("Adjust Cols")
+	}
+	for i, entry := range entries {
+		w := 0
+
+		// do not adjust col width for last col
+		if i < Cols-1 {
+			if len(entry) > ColW[i] {
+				ColW[i] = len(entry)
+			}
+			w = ColW[i] + Padding
+		}
+
+		fmt.Printf("%-"+strconv.Itoa(w)+"s", entry)
+	}
+	fmt.Println()
 }
 
 func logLevel(m Msg) rune {
