@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	flagCluster = flag.String("c", "", "Cluster to connect to, e.g. v5, c2")
 	flagDeploy  = flag.String("deploy", "", "Module to deploy, e.g. larskluge/string-upcase")
 	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
