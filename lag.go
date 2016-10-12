@@ -84,13 +84,13 @@ func getJSON(url string) map[string]interface{} {
 }
 
 func (l *Lag) ping() (bool, interface{}) {
-	resp := getJSON(BurrowEndpoint + "/v2/kafka")
+	resp := getJSON(BurrowEndpoint)
 	return resp["error"] == false, resp["message"]
 }
 
 func (l *Lag) getCluster() []string {
 	var clusters []string
-	resp := getJSON(BurrowEndpoint + "/v2/kafka")
+	resp := getJSON(BurrowEndpoint)
 	if rec, ok := resp["clusters"].([]interface{}); ok {
 		for _, val := range rec {
 			clusters = append(clusters, val.(string))

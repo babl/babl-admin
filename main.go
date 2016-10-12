@@ -64,7 +64,7 @@ func main() {
 
 	ClusterAddr = Cluster + ".babl.sh"
 	Broker = ClusterAddr + ":9092"
-	BurrowEndpoint = "http://" + ClusterAddr + ":8000"
+	BurrowEndpoint = "http://" + ClusterAddr + ":8000/v2/kafka"
 
 	if *flagDeploy != "" {
 		Deploy(*flagDeploy, *flagVersion, *flagMemory)
