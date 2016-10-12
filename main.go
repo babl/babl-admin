@@ -16,6 +16,17 @@ var (
 func main() {
 	flag.Parse()
 
+	Cluster = *flagCluster
+
+	if Cluster == "" {
+		fmt.Println("Please specify which cluster to connect to, e.g. -c v5")
+		os.Exit(1)
+	}
+
+	ClusterAddr = Cluster + ".babl.sh"
+	Broker = ClusterAddr + ":9092"
+	BurrowEndpoint = "http://" + ClusterAddr + ":8000/v2/kafka"
+
 	if *flagDeploy != "" {
 		Deploy(*flagDeploy, *flagVersion, *flagMemory)
 		return

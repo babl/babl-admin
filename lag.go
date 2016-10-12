@@ -71,13 +71,6 @@ type Consumer struct {
 	} `json:"request"`
 }
 
-//Burrow Endpoint url
-const (
-	BurrowEndpoint            = "http://v5.babl.sh:8000/v2/kafka"
-	BurrowEndpointConsumer    = "http://v5.babl.sh:8000/v2/kafka/%s/consumer"
-	BurrowEndpointConsumerLag = "http://v5.babl.sh:8000/v2/kafka/%s/consumer/%s/lag"
-)
-
 func getJSON(url string) map[string]interface{} {
 	resp, err := http.Get(url)
 	Check(err)
@@ -109,7 +102,7 @@ func (l *Lag) getCluster() []string {
 
 func (l *Lag) getConsumers(cluster string) []string {
 	var consumers []string
-	url := fmt.Sprintf(BurrowEndpointConsumer, cluster)
+	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer", cluster)
 	resp := getJSON(url)
 	if rec, ok := resp["consumers"].([]interface{}); ok {
 		for _, val := range rec {
@@ -121,7 +114,7 @@ func (l *Lag) getConsumers(cluster string) []string {
 
 func (l *Lag) getLag(cluster string, consumer string) Consumer {
 	var c Consumer
-	url := fmt.Sprintf(BurrowEndpointConsumerLag, cluster, consumer)
+	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer/%s/lag", cluster, consumer)
 	resp, err := http.Get(url)
 	Check(err)
 	defer resp.Body.Close()
