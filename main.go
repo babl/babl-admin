@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 
 //Broker url
 const (
-	Broker    = "v5.babl.sh:9092"
 	Topic     = "logs.raw"
 	Partition = 0
 	LastN     = 1000
@@ -30,10 +30,16 @@ var (
 
 	ColW = make([]int, Cols-1)
 
+	flagCluster = flag.String("c", "", "Cluster to connect to, e.g. v5, c2")
 	flagDeploy  = flag.String("deploy", "", "Module to deploy, e.g. larskluge/string-upcase")
 	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
 	flagMonitor = flag.String("monitor", "", "cluster stats (lag)")
+
+	Cluster        string
+	ClusterAddr    string
+	Broker         string
+	BurrowEndpoint string
 )
 
 //Msg structure
@@ -48,6 +54,17 @@ type Msg struct {
 
 func main() {
 	flag.Parse()
+
+	Cluster = *flagCluster
+
+	if Cluster == "" {
+		fmt.Println("Please specify which cluster to connect to, e.g. -c v5")
+		os.Exit(1)
+	}
+
+	ClusterAddr = Cluster + ".babl.sh"
+	Broker = ClusterAddr + ":9092"
+	BurrowEndpoint = "http://" + ClusterAddr + ":8000"
 
 	if *flagDeploy != "" {
 		Deploy(*flagDeploy, *flagVersion, *flagMemory)
