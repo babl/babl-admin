@@ -101,7 +101,6 @@ func (l *Lag) getCluster() []string {
 
 func (l *Lag) getConsumers(cluster string) []string {
 	var consumers []string
-
 	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer", cluster)
 	resp := getJSON(url)
 	if rec, ok := resp["consumers"].([]interface{}); ok {
