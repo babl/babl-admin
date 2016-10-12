@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 var (
@@ -11,6 +12,11 @@ var (
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
 	flagMonitor = flag.String("monitor", "", "cluster stats (lag)")
 	flagTopic   = flag.String("topic", "", "topic to inspect")
+
+	Cluster        string
+	ClusterAddr    string
+	Broker         string
+	BurrowEndpoint string
 )
 
 func main() {
