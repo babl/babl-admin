@@ -70,13 +70,6 @@ type Consumer struct {
 	} `json:"request"`
 }
 
-//Burrow Endpoint url
-const (
-	BurrowEndpoint            = "http://v5.babl.sh:8000/v2/kafka"
-	BurrowEndpointConsumer    = "http://v5.babl.sh:8000/v2/kafka/%s/consumer"
-	BurrowEndpointConsumerLag = "http://v5.babl.sh:8000/v2/kafka/%s/consumer/%s/lag"
-)
-
 func getJSON(url string) map[string]interface{} {
 	resp, err := http.Get(url)
 	check(err)
@@ -91,13 +84,13 @@ func getJSON(url string) map[string]interface{} {
 }
 
 func (l *Lag) ping() (bool, interface{}) {
-	resp := getJSON(BurrowEndpoint)
+	resp := getJSON(BurrowEndpoint + "/v2/kafka")
 	return resp["error"] == false, resp["message"]
 }
 
 func (l *Lag) getCluster() []string {
 	var clusters []string
-	resp := getJSON(BurrowEndpoint)
+	resp := getJSON(BurrowEndpoint + "/v2/kafka")
 	if rec, ok := resp["clusters"].([]interface{}); ok {
 		for _, val := range rec {
 			clusters = append(clusters, val.(string))
@@ -108,7 +101,7 @@ func (l *Lag) getCluster() []string {
 
 func (l *Lag) getConsumers(cluster string) []string {
 	var consumers []string
-	url := fmt.Sprintf(BurrowEndpointConsumer, cluster)
+	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer", cluster)
 	resp := getJSON(url)
 	if rec, ok := resp["consumers"].([]interface{}); ok {
 		for _, val := range rec {
@@ -120,7 +113,7 @@ func (l *Lag) getConsumers(cluster string) []string {
 
 func (l *Lag) getLag(cluster string, consumer string) Consumer {
 	var c Consumer
-	url := fmt.Sprintf(BurrowEndpointConsumerLag, cluster, consumer)
+	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer/%s/lag", cluster, consumer)
 	resp, err := http.Get(url)
 	check(err)
 	defer resp.Body.Close()
