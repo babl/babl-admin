@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 var (
@@ -12,7 +13,7 @@ var (
 	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
 	flagMonitor = flag.String("monitor", "", "cluster stats (lag)")
-	flagTopic   = flag.String("topic", "", "topic to inspect")
+	flagTopic   = flag.String("t", "", "topic to inspect")
 
 	Cluster        string
 	ClusterAddr    string
@@ -53,7 +54,8 @@ func main() {
 	}
 
 	if *flagTopic != "" {
-		ParseTopic(*flagTopic)
+		topic := *flagTopic
+		ParseTopic(strings.Split(topic, ","))
 	} else {
 		ParseRaw()
 	}
