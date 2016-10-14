@@ -158,7 +158,7 @@ func envFormatted(env map[string]string) (s string) {
 }
 
 func logIoData(rid, topic string, size_in int, env map[string]string, payload_url string, stdin string) {
-	fmt.Printf("-> RID:%-7s%-42s IN__LEN:%-14d ENV: %s\tPAYLOAD_URL:%s %s\n", rid, topic, size_in, envFormatted(env), payload_url, stdin)
+	fmt.Printf("-> RID:%-7s%-42s IN__LEN:%-14d ENV: %s\tPAYLOAD_URL:%s IN:%s\n", rid, topic, size_in, envFormatted(env), payload_url, stdin)
 }
 
 func logPingData(rid, topic string) {
@@ -169,7 +169,7 @@ func logSupervisorData(rid, topic string, size_out int, exit_code int32, payload
 	if exit_code != 0 {
 		color.Set(color.FgRed)
 	}
-	fmt.Printf("<- RID:%-7s%-42s OUT_LEN:%-14d ERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL:%s\t (OUT:%s,ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, stdout, stderr)
+	fmt.Printf("<- RID:%-7s%-42s OUT_LEN:%-14d EXIT_CODE: %d\tPAYLOAD_URL:%s\t (OUT:%s,ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, stdout, stderr)
 	color.Unset()
 }
 
