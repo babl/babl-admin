@@ -163,14 +163,14 @@ func logIoData(rid, topic string, size_in int, env map[string]string, payload_ur
 }
 
 func logPingData(rid, topic string) {
-	fmt.Printf("RID:%-7s%-42s\t%s\n", rid, topic, "PING")
+	fmt.Printf("-> RID:%-7s%-42s\t%s\n", rid, topic, "PING")
 }
 
-func logSupervisorData(rid, topic string, size_out int, exit_code int32, payload_url string, out string, err string) {
+func logSupervisorData(rid, topic string, size_out int, exit_code int32, payload_url string, stdout string, stderr string) {
 	if exit_code != 0 {
 		color.Set(color.FgRed)
 	}
-	fmt.Printf("<- RID:%-7s%-42s OUT_LEN:%-14d ERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL: %s\n", rid, topic, size_out, err, exit_code, payload_url)
+	fmt.Printf("<- RID:%-7s%-42s OUT_LEN:%-14d ERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL:%s\t (OUT:%s,ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, stdout, stderr)
 	color.Unset()
 }
 
