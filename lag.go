@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	. "github.com/larskluge/babl-server/utils"
 	"github.com/olekukonko/tablewriter"
 	"io/ioutil"
 	"net/http"
@@ -72,14 +73,14 @@ type Consumer struct {
 
 func getJSON(url string) map[string]interface{} {
 	resp, err := http.Get(url)
-	check(err)
+	Check(err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	// fmt.Println(string(body))
-	check(err)
+	Check(err)
 	var obj map[string]interface{}
 	err = json.Unmarshal(body, &obj)
-	check(err)
+	Check(err)
 	return obj
 }
 
@@ -115,12 +116,12 @@ func (l *Lag) getLag(cluster string, consumer string) Consumer {
 	var c Consumer
 	url := fmt.Sprintf(BurrowEndpoint+"/%s/consumer/%s/lag", cluster, consumer)
 	resp, err := http.Get(url)
-	check(err)
+	Check(err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	check(err)
+	Check(err)
 	err = json.Unmarshal(body, &c)
-	check(err)
+	Check(err)
 	return c
 }
 
