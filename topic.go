@@ -8,7 +8,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/fatih/color"
-	_ "github.com/fatih/color"
 	"github.com/golang/protobuf/proto"
 	"github.com/larskluge/babl-server/kafka"
 	. "github.com/larskluge/babl-server/utils"
