@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -139,19 +140,24 @@ func parseSupervisors(clientgroup *cluster.Client, topics []string) {
 	}
 }
 
+func envFormatted(env map[string]string) (s string) {
+	for k, v := range env {
+		s += fmt.Sprintf(" %s=\"%s\"", k, v)
+	}
+	return strings.TrimSpace(s)
 func logIoData(rid, topic string, size_in int, env interface{}, payload_url string, stdin string) {
-	fmt.Printf("RID:%-7s%-42s IN__LEN:%-14d ENV:%v\tPAYLOAD_URL:%s IN:%s\n", rid, topic, size_in, env, payload_url, stdin)
+	fmt.Printf("->RID:%-7s%-42s IN__LEN:%-14d ENV:%v\tPAYLOAD_URL:%s IN:%s\n", rid, topic, size_in, env, payload_url, stdin)
 }
 
 func logPingData(rid, topic string) {
-	fmt.Printf("RID:%-7s%-42s\t%s\n", rid, topic, "PING")
+	fmt.Printf("->RID:%-7s%-42s\t%s\n", rid, topic, "PING")
 }
 
 func logSupervisorData(rid, topic string, size_out int, exit_code int32, payload_url string, out string, err string) {
 	if exit_code != 0 {
 		color.Set(color.FgRed)
 	}
-	fmt.Printf("RID:%-7s%-42s OUT_LEN:%-14d \tEXIT_CODE: %d\tPAYLOAD_URL: %s (OUT:%s , ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, out, err)
+	fmt.Printf("<-RID:%-7s%-42s OUT_LEN:%-14d \tEXIT_CODE: %d\tPAYLOAD_URL: %s (OUT:%s , ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, out, err)
 	color.Unset()
 }
 
