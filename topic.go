@@ -21,7 +21,6 @@ var regexSup = regexp.MustCompile("^supervisor.*")
 var regexText = regexp.MustCompile("^text/plain.*")
 
 func ParseTopic(Topics []string) {
-
 	wait_here_forever := make(chan bool)
 	log.SetLevel(log.DebugLevel)
 
