@@ -75,7 +75,6 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
 	go ConsumeGroup(clientgroup, topics, ch)
 	for {
-
 		data, _ := <-ch //LISTEN
 
 		rid := SplitLast(data.Key, ".")
@@ -102,7 +101,6 @@ func parseSupervisors(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
 	go ConsumeGroup(clientgroup, topics, ch)
 	for {
-
 		data, _ := <-ch //LISTEN
 
 		rid := SplitLast(data.Key, ".")
