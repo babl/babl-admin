@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 )
 
 var regexSup = regexp.MustCompile("^supervisor.*")
+var regexText = regexp.MustCompile("^text/plain.*")
 
 func ParseTopic(Topics []string) {
 	wait_here_forever := make(chan bool)
@@ -74,6 +76,7 @@ func consumeNotifications(consumer *cluster.Consumer) {
 func parseGroup(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
 	go ConsumeGroup(clientgroup, topics, ch)
+	var stdin string
 	for {
 		data, _ := <-ch //LISTEN
 
@@ -85,7 +88,15 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 			in := &pbm.BinRequest{}
 			err := proto.Unmarshal(data.Value, in)
 			Check(err)
-			logIoData(rid, data.Topic, len(in.Stdin), in.Env, in.PayloadUrl)
+
+			if regexText.MatchString(http.DetectContentType(in.Stdin)) {
+				stdin = string(in.Stdin)
+
+			} else {
+				stdin = http.DetectContentType(in.Stdin)
+			}
+
+			logIoData(rid, data.Topic, len(in.Stdin), in.Env, in.PayloadUrl, stdin)
 			res = "success"
 		case "Ping":
 			in := &pbm.Empty{}
@@ -99,33 +110,48 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 }
 func parseSupervisors(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
+
 	go ConsumeGroup(clientgroup, topics, ch)
 	for {
 		data, _ := <-ch //LISTEN
-
+		var stdout, stderr string
 		rid := SplitLast(data.Key, ".")
 		in := &pbm.BinReply{}
 		err := proto.Unmarshal(data.Value, in)
 		Check(err)
-		logSupervisorData(rid, data.Topic, len(in.Stdout), SplitFirst(string(in.Stderr), ":"), in.Exitcode, in.PayloadUrl)
+
+		if regexText.MatchString(http.DetectContentType(in.Stdout)) {
+			stdout = string(in.Stdout)
+
+		} else {
+			stdout = http.DetectContentType(in.Stdout)
+		}
+
+		if regexText.MatchString(http.DetectContentType(in.Stderr)) {
+			stderr = string(in.Stderr)
+		} else {
+			stderr = http.DetectContentType(in.Stderr)
+		}
+
+		logSupervisorData(rid, data.Topic, len(in.Stdout), in.Exitcode, in.PayloadUrl, stdout, stderr)
 
 		data.Processed <- "success" // SEND
 	}
 }
 
-func logIoData(rid, topic string, size_in int, env interface{}, payload_url string) {
-	fmt.Printf("RID:%-7s%-42s IN__LEN:%-14d ENV:%v\tPAYLOAD_URL:%s\n", rid, topic, size_in, env, payload_url)
+func logIoData(rid, topic string, size_in int, env interface{}, payload_url string, stdin string) {
+	fmt.Printf("RID:%-7s%-42s IN__LEN:%-14d ENV:%v\tPAYLOAD_URL:%s IN:%s\n", rid, topic, size_in, env, payload_url, stdin)
 }
 
 func logPingData(rid, topic string) {
 	fmt.Printf("RID:%-7s%-42s\t%s\n", rid, topic, "PING")
 }
 
-func logSupervisorData(rid, topic string, size_out int, err string, exit_code int32, payload_url string) {
+func logSupervisorData(rid, topic string, size_out int, exit_code int32, payload_url string, out string, err string) {
 	if exit_code != 0 {
 		color.Set(color.FgRed)
 	}
-	fmt.Printf("RID:%-7s%-42s OUT_LEN:%-14d ERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL: %s\n", rid, topic, size_out, err, exit_code, payload_url)
+	fmt.Printf("RID:%-7s%-42s OUT_LEN:%-14d \tEXIT_CODE: %d\tPAYLOAD_URL: %s (OUT:%s , ERR:%s)\n", rid, topic, size_out, exit_code, payload_url, out, err)
 	color.Unset()
 }
 
