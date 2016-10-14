@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"text/tabwriter"
+	"regexp"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/fatih/color"
 	_ "github.com/fatih/color"
 	"github.com/golang/protobuf/proto"
 	"github.com/larskluge/babl-server/kafka"
@@ -16,19 +16,24 @@ import (
 	"gopkg.in/bsm/sarama-cluster.v2"
 )
 
-func ParseTopic(Topic []string) {
+var regexSup = regexp.MustCompile("^supervisor.*")
+
+func ParseTopic(Topics []string) {
 	wait_here_forever := make(chan bool)
-	log.SetFormatter(&log.TextFormatter{})
 	log.SetLevel(log.DebugLevel)
+
+	client := *kafka.NewClient([]string{Broker}, "babl-admin", true)
+	topics, err := client.Topics()
+	Check(err)
+	f := func(topic string) bool { return regexSup.MatchString(topic) }
+	supTopics := filter(topics, f)
+	client.Close()
+
 	clientgroup := kafka.NewClientGroup([]string{Broker}, "babl-admin", true)
 	defer (*clientgroup).Close()
-	go parseGroup(clientgroup, Topic)
-	go parseSupervisors(clientgroup, []string{"supervisor.a4b4bcae9c39"})
+	go parseGroup(clientgroup, Topics)
+	go parseSupervisors(clientgroup, supTopics)
 	<-wait_here_forever
-}
-
-func GetTopics() {
-	//#todo
 }
 
 func ConsumeGroup(client *cluster.Client, topics []string, ch chan *kafka.ConsumerData) {
@@ -48,11 +53,8 @@ func ConsumeGroup(client *cluster.Client, topics []string, ch chan *kafka.Consum
 	for msg := range consumer.Messages() {
 
 		data := kafka.ConsumerData{Topic: msg.Topic, Key: string(msg.Key), Value: msg.Value, Processed: make(chan string, 1)}
-		// rid := SplitLast(data.Key, ".")
-		// log.WithFields(log.Fields{"topics": topics, "partition": msg.Partition, "offset": msg.Offset, "key": data.Key, "value": (data.Value), "value size": len(data.Value), "rid": rid}).Info("Message")
-		// fmt.Println("MSG->", "T:", msg.Topic, "RID:", rid, "SIZE:", len(data.Value), "P/OFFSET", msg.Partition, "/", msg.Offset)
-		ch <- &data
-		metadata := <-data.Processed
+		ch <- &data                  //SEND
+		metadata := <-data.Processed //LISTEN
 		consumer.MarkOffset(msg, metadata)
 	}
 	log.Println("ConsumerGroups: Done consuming topic/groups", topics)
@@ -70,19 +72,12 @@ func consumeNotifications(consumer *cluster.Consumer) {
 	}
 }
 
-func parseSupervisor(clientgroup *cluster.Client, topics []string) {
-
-}
-
 func parseGroup(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
 	go ConsumeGroup(clientgroup, topics, ch)
 	for {
-		// log.WithFields(log.Fields{"topics": topics}).Debug("Work")
 
-		data, _ := <-ch
-
-		// log.WithFields(log.Fields{"key": data.Key}).Debug("Request recieved in module's topic/group")
+		data, _ := <-ch //LISTEN
 
 		rid := SplitLast(data.Key, ".")
 		res := "error"
@@ -92,62 +87,57 @@ func parseGroup(clientgroup *cluster.Client, topics []string) {
 			in := &pbm.BinRequest{}
 			err := proto.Unmarshal(data.Value, in)
 			Check(err)
-			logData(rid, data.Topic, len(in.Stdin), in.Env, in.PayloadUrl)
-			DataWriter.Flush()
+			logIoData(rid, data.Topic, len(in.Stdin), in.Env, in.PayloadUrl)
 			res = "success"
 		case "Ping":
 			in := &pbm.Empty{}
 			err := proto.Unmarshal(data.Value, in)
 			Check(err)
-			fmt.Println(data.Topic, "-> PING", in)
+			logPingData(rid, data.Topic)
 			res = "success"
 		}
-		data.Processed <- res
+		data.Processed <- res //SEND
 	}
 }
 func parseSupervisors(clientgroup *cluster.Client, topics []string) {
 	ch := make(chan *kafka.ConsumerData)
 	go ConsumeGroup(clientgroup, topics, ch)
 	for {
-		// log.WithFields(log.Fields{"topics": topics}).Debug("Work")
 
-		data, _ := <-ch
+		data, _ := <-ch //LISTEN
 
 		rid := SplitLast(data.Key, ".")
 		in := &pbm.BinReply{}
 		err := proto.Unmarshal(data.Value, in)
 		Check(err)
-		supervisorData(rid, data.Topic, string(in.Stdout), string(in.Stderr), in.Exitcode, in.PayloadUrl)
-		DataWriter.Flush()
-		data.Processed <- "success"
-		// log.WithFields(log.Fields{"key": data.Key}).Debug("Request recieved in module's topic/group")
+		logSupervisorData(rid, data.Topic, len(in.Stdout), SplitFirst(string(in.Stderr), ":"), in.Exitcode, in.PayloadUrl)
 
-		// res := "error"
-		// method := SplitLast(data.Topic, ".")
-		// switch method {
-		// case "IO":
-		// 	in := &pbm.BinRequest{}
-		// 	err := proto.Unmarshal(data.Value, in)
-		// 	Check(err)
-		// 	logData(rid, data.Topic, len(in.Stdin), in.Env, in.PayloadUrl)
-		// 	DataWriter.Flush()
-		// 	res = "success"
-		// case "Ping":
-		// 	in := &pbm.Empty{}
-		// 	err := proto.Unmarshal(data.Value, in)
-		// 	Check(err)
-		// 	fmt.Println(data.Topic, "-> PING", in)
-		// 	res = "success"
-		// }
-
+		data.Processed <- "success" // SEND
 	}
 }
 
-var DataWriter = tabwriter.NewWriter(os.Stdout, 0, 100, 10, ' ', 0)
-
-func logData(rid, topic string, size int, env interface{}, payload_url string) {
-	fmt.Fprintf(DataWriter, "RID:%s %s\tPAYLOAD_LEN:%d\tENV:%v\tPAYLOAD_URL:%s\n", rid, topic, size, env, payload_url)
+func logIoData(rid, topic string, size_in int, env interface{}, payload_url string) {
+	fmt.Printf("RID:%-7s%-42s IN__LEN:%-14d ENV:%v\tPAYLOAD_URL:%s\n", rid, topic, size_in, env, payload_url)
 }
-func supervisorData(rid, topic string, out string, err string, exit_code int32, payload_url string) {
-	fmt.Fprintf(DataWriter, "RID:%s %s\tOUT:%s\tERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL: %s\n", rid, topic, out, err, exit_code, payload_url)
+
+func logPingData(rid, topic string) {
+	fmt.Printf("RID:%-7s%-42s\t%s\n", rid, topic, "PING")
+}
+
+func logSupervisorData(rid, topic string, size_out int, err string, exit_code int32, payload_url string) {
+	if exit_code != 0 {
+		color.Set(color.FgRed)
+	}
+	fmt.Printf("RID:%-7s%-42s OUT_LEN:%-14d ERR:%s\tEXIT_CODE: %d\tPAYLOAD_URL: %s\n", rid, topic, size_out, err, exit_code, payload_url)
+	color.Unset()
+}
+
+func filter(s []string, fn func(string) bool) []string {
+	var r []string // == nil
+	for _, v := range s {
+		if fn(v) {
+			r = append(r, v)
+		}
+	}
+	return r
 }
