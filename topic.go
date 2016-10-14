@@ -21,6 +21,7 @@ var regexSup = regexp.MustCompile("^supervisor.*")
 var regexText = regexp.MustCompile("^text/plain.*")
 
 func ParseTopic(Topics []string) {
+
 	wait_here_forever := make(chan bool)
 	log.SetLevel(log.DebugLevel)
 
@@ -29,11 +30,21 @@ func ParseTopic(Topics []string) {
 	Check(err)
 	f := func(topic string) bool { return regexSup.MatchString(topic) }
 	supTopics := filter(topics, f)
+
+	var moduleTopics []string
+	for _, t := range Topics {
+		r := regexp.MustCompile(t)
+		f = func(topic string) bool { return r.MatchString(topic) }
+		modTopics := filter(topics, f)
+		moduleTopics = append(moduleTopics, modTopics...)
+	}
+	moduleTopics = removeDuplicatesUnordered(moduleTopics)
+
 	client.Close()
 
 	clientgroup := kafka.NewClientGroup([]string{Broker}, "babl-admin", true)
 	defer (*clientgroup).Close()
-	go parseGroup(clientgroup, Topics)
+	go parseGroup(clientgroup, moduleTopics)
 	go parseSupervisors(clientgroup, supTopics)
 	<-wait_here_forever
 }
@@ -171,4 +182,20 @@ func filter(s []string, fn func(string) bool) []string {
 		}
 	}
 	return r
+}
+
+func removeDuplicatesUnordered(elements []string) []string {
+	encountered := map[string]bool{}
+
+	// Create a map of all unique elements.
+	for v := range elements {
+		encountered[elements[v]] = true
+	}
+
+	// Place all keys from the map into a slice.
+	result := []string{}
+	for key, _ := range encountered {
+		result = append(result, key)
+	}
+	return result
 }
