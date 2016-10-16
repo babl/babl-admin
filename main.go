@@ -12,6 +12,7 @@ var (
 	flagDeploy  = flag.String("deploy", "", "Module to deploy, e.g. larskluge/string-upcase")
 	flagVersion = flag.String("version", "v0", "Module Version to deploy, e.g. v17")
 	flagMemory  = flag.Int("mem", 16, "Memory allowance")
+	flagTimeout = flag.String("timeout", "30s", "Timeout for Command")
 	flagMonitor = flag.String("monitor", "", "cluster stats (lag)")
 	flagTopic   = flag.String("t", "", "topic to inspect")
 
@@ -36,7 +37,7 @@ func main() {
 	BurrowEndpoint = "http://" + ClusterAddr + ":8000/v2/kafka"
 
 	if *flagDeploy != "" {
-		Deploy(*flagDeploy, *flagVersion, *flagMemory)
+		Deploy(*flagDeploy, *flagVersion, *flagMemory, *flagTimeout)
 		return
 	}
 
