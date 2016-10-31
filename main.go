@@ -52,6 +52,8 @@ func main() {
 			fmt.Println("Sorry Cant do!", msg)
 		}
 		return
+	} else if *flagMonitor == "module" {
+		ParseModule()
 	}
 
 	if *flagTopic != "" {
