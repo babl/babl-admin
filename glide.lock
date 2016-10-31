@@ -1,0 +1,80 @@
+hash: d30eb9409e68f5c6aec862fd7df5684a599e040e3e0dd257bee56390b5087da4
+updated: 2016-10-30T17:06:36.530974538+01:00
+imports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/eapache/go-resiliency
+  version: b86b1ec0dd4209a588dc1285cdd471e73525c0b3
+  subpackages:
+  - breaker
+- name: github.com/eapache/go-xerial-snappy
+  version: bb955e01b9346ac19dc29eb16586c90ded99a98c
+- name: github.com/eapache/queue
+  version: 44cc805cf13205b55f69e14bcb69867d1ae92f98
+- name: github.com/fatih/color
+  version: bf82308e8c8546dc2b945157173eb8a959ae9505
+- name: github.com/golang/protobuf
+  version: 98fa357170587e470c5f27d3c3ea0947b71eb455
+  subpackages:
+  - proto
+- name: github.com/golang/snappy
+  version: d9eb7a3d35ec988b8585d4a0068e462c27d28380
+- name: github.com/goware/prefixer
+  version: 395022866408d928fc2439f7eac73dd8d370ec1d
+- name: github.com/klauspost/crc32
+  version: cb6bfca970f6908083f26f39a79009d608efd5cd
+- name: github.com/larskluge/babl
+  version: 8679880f56e95ad8e07d303c4c9a04277eb98725
+  subpackages:
+  - bablmodule
+  - bablnaming
+  - bablutils
+  - protobuf
+  - protobuf/messages
+- name: github.com/larskluge/babl-server
+  version: 0f64a4dfbb0d98791fcd174f3bc50eaf92ed08f9
+  subpackages:
+  - kafka
+  - utils
+- name: github.com/larskluge/babl-storage
+  version: 9f11afbeaf8e6f421e4039588214735d27b0bd0a
+  subpackages:
+  - download
+  - upload
+- name: github.com/mattn/go-colorable
+  version: 6c903ff4aa50920ca86087a280590b36b3152b9c
+- name: github.com/mattn/go-isatty
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
+- name: github.com/mattn/go-runewidth
+  version: 737072b4e32b7a5018b4a7125da8d12de90e8045
+- name: github.com/muesli/cache2go
+  version: 85b4c0beff6963ea48e14ab79ec8bced31a5efd4
+- name: github.com/olekukonko/tablewriter
+  version: bdcc175572fd7abece6c831e643891b9331bc9e7
+- name: github.com/Shopify/sarama
+  version: bd61cae2be85fa6ff40eb23dcdd24567967ac2ae
+- name: github.com/Sirupsen/logrus
+  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
+- name: github.com/urfave/cli
+  version: 6f2647a880e25bd7178ab4bbf1f4045ac256cc57
+- name: golang.org/x/net
+  version: 65dfc08770ce66f74becfdff5f8ab01caef4e946
+  subpackages:
+  - context
+- name: golang.org/x/sys
+  version: c200b10b5d5e122be351b67af224adc6128af5bf
+  subpackages:
+  - unix
+- name: google.golang.org/grpc
+  version: c2c110d5cf950aef5e2af86b2f5d0a53400ff90b
+  subpackages:
+  - credentials
+- name: gopkg.in/bsm/sarama-cluster.v2
+  version: 117d3bb910d11344786e57f50ec3a03b15cca54d
+testImports:
+- name: github.com/onsi/ginkgo
+  version: a8ccd817611666211fdf6e6a752174a0db8374a8
+- name: github.com/onsi/gomega
+  version: e46a88d81f5164c47e2d51c1c3d863dde7997993
