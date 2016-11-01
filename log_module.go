@@ -78,8 +78,10 @@ func parseFilterMessage(msg *sarama.ConsumerMessage) {
 
 	if rid != "" && SupervisorSent.MatchString(m.Message) {
 		topic := getAttr("topic", m.Message)
+		partition := getAttr("partition", m.Message)
+		offset := getAttr("offset", m.Message)
 		// fmt.Println(topic, " -> track message ->", m.Message)
-		go trackMessage(rid, topic)
+		go trackMessage(rid, topic, partition, offset)
 	}
 
 	if rid != "" && ModuleReceived.MatchString(m.Message) {
@@ -102,7 +104,7 @@ func getAttr(atr string, msg string) string {
 	return res
 }
 
-func trackMessage(rid string, topic string) error {
+func trackMessage(rid, topic, partition, offset string) error {
 	timeCheck := TIME_INTERVAL
 	channel := getRidChannel(rid)
 	// fmt.Println("TRACKING:", channel, rid)
@@ -120,13 +122,13 @@ func trackMessage(rid string, topic string) error {
 		case <-time.After(time.Duration(timeCheck) * time.Second):
 			if timeCheck >= TIMEOUT {
 				color.Set(color.FgRed)
-				fmt.Println(rid, "XXXXXXX->", "MESSAGE ENQUEUED FOR 1 MIN @ ->", topic)
+				fmt.Println(rid, "XXXXXXX->", "MESSAGE ENQUEUED FOR 1 MIN @ ->", topic, partition, offset)
 				color.Unset()
 				return nil
 			}
 
 			color.Set(color.FgYellow)
-			fmt.Println(rid, "X->", topic, timeCheck, "seconds in queue!!!")
+			fmt.Println(rid, "X->", topic, timeCheck, "seconds in queue!!!", partition, offset)
 			color.Unset()
 
 			timeCheck = timeCheck + TIME_INTERVAL
