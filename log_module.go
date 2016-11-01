@@ -13,7 +13,7 @@ import (
 	. "github.com/larskluge/babl-server/utils"
 )
 
-const TIME_INTERVAL = 10 //value in seconds to warn about queueing
+const TIME_INTERVAL = 30 //value in seconds to warn about queueing
 const TIMEOUT = 60       // timeout for queuing error message
 
 //Warning log level
@@ -83,15 +83,14 @@ func parseFilterMessage(msg *sarama.ConsumerMessage) {
 	}
 
 	if rid != "" && ModuleReceived.MatchString(m.Message) {
-		// fmt.Println("reply message ->", m.Message)
-		go replyMessage(rid, AppName(m))
+		go replyMessage(rid, m.Message, AppName(m))
 	}
 
 }
 
 func getAttr(atr string, msg string) string {
 	var res string
-	re := fmt.Sprintf(`"%s":"([.a-zA-Z\d]+)"`, atr)
+	re := fmt.Sprintf(`"%s":([".a-zA-Z\d]+)`, atr)
 
 	r := regexp.MustCompile(re)
 	matches := r.FindStringSubmatch(msg)
@@ -104,7 +103,6 @@ func getAttr(atr string, msg string) string {
 }
 
 func trackMessage(rid string, topic string) error {
-
 	timeCheck := TIME_INTERVAL
 	channel := getRidChannel(rid)
 	// fmt.Println("TRACKING:", channel, rid)
@@ -131,7 +129,7 @@ func trackMessage(rid string, topic string) error {
 			fmt.Println(rid, "X->", topic, timeCheck, "seconds in queue!!!")
 			color.Unset()
 
-			timeCheck = timeCheck + 10
+			timeCheck = timeCheck + TIME_INTERVAL
 			issues = true
 			continue
 		}
@@ -144,20 +142,21 @@ func getRidChannel(rid string) chan string {
 
 	resp.mux.Unlock()
 	if ok {
-
 		return channel
 	} else {
 		resp.mux.Lock()
 		resp.channels[rid] = make(chan string, 1)
 		resp.mux.Unlock()
-
 		return resp.channels[rid]
 	}
 }
 
-func replyMessage(rid string, app string) {
+func replyMessage(rid string, msg string, app string) {
 	channel := getRidChannel(rid)
-	// fmt.Println("REPLYING:", channel, rid, app)
-	channel <- app
+	partition := getAttr("partition", msg)
+	offset := getAttr("offset", msg)
+	reply := fmt.Sprintf("%s, [%s,%s]", app, partition, offset)
+	// fmt.Println("reply message ->", msg)
+	channel <- reply
 	close(channel)
 }
