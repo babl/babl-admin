@@ -26,6 +26,7 @@ const (
 var (
 	Warning = regexp.MustCompile("(?i)warn|overloaded|timeout|lost")
 	Error   = regexp.MustCompile("(?i)error|panic|fail|killed|exception")
+	Success = regexp.MustCompile("(?i)SUCCESS")
 
 	ColW = make([]int, Cols-1)
 )
@@ -85,6 +86,8 @@ func parseMessage(msg *sarama.ConsumerMessage) {
 	}
 	level := logLevel(m)
 	switch level {
+	case 'S':
+		color.Set(color.FgGreen)
 	case 'E':
 		color.Set(color.FgRed)
 	case 'W':
@@ -135,7 +138,9 @@ func logRaw(entries ...string) {
 }
 
 func logLevel(m Msg) rune {
-	if Error.MatchString(m.Message) {
+	if Success.MatchString(m.Message) {
+		return 'S'
+	} else if Error.MatchString(m.Message) {
 		return 'E'
 	} else if Warning.MatchString(m.Message) {
 		return 'W'
