@@ -31,7 +31,6 @@ var (
 	ColW = make([]int, Cols-1)
 )
 
-//Msg structure
 type Msg struct {
 	Hostname         string          `json:"_HOSTNAME"`
 	SystemdUnit      string          `json:"_SYSTEMD_UNIT"`

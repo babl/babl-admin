@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+
 	"sync"
 	"time"
 
@@ -158,7 +159,7 @@ func replyMessage(rid string, msg string, app string) {
 	partition := getAttr("partition", msg)
 	offset := getAttr("offset", msg)
 	reply := fmt.Sprintf("%s, [%s,%s]", app, partition, offset)
-	// fmt.Println("reply message ->", msg)
+	//#todo, fix double messaging on rebalacing
 	channel <- reply
-	close(channel)
+	// close(channel)
 }

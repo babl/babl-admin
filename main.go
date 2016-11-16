@@ -54,6 +54,8 @@ func main() {
 		return
 	} else if *flagMonitor == "module" {
 		ParseModule()
+	} else if *flagMonitor == "events" {
+		ParseEvents()
 	}
 
 	if *flagTopic != "" {
