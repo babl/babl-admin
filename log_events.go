@@ -7,9 +7,11 @@ import (
 	_ "github.com/fatih/color"
 	"github.com/larskluge/babl-server/kafka"
 	. "github.com/larskluge/babl-server/utils"
+	"os/exec"
 	_ "regexp"
 	_ "strconv"
 	_ "strings"
+	"time"
 )
 
 //Warning log level
@@ -50,17 +52,10 @@ func ParseEvents() {
 	Check(err)
 	defer consumer.Close()
 
-	offsetNewest, err := client.GetOffset(TopicEvents, Partition, sarama.OffsetNewest)
-	Check(err)
-	offsetOldest, err := client.GetOffset(TopicEvents, Partition, sarama.OffsetOldest)
+	offsetNewest, err := client.GetOffset(TopicEvents, 0, sarama.OffsetNewest)
 	Check(err)
 
-	offset := offsetNewest - LastN
-	if offset < 0 || offset < offsetOldest {
-		offset = offsetOldest
-	}
-
-	cp, err := consumer.ConsumePartition(TopicEvents, Partition, offset)
+	cp, err := consumer.ConsumePartition(TopicEvents, 0, offsetNewest)
 	Check(err)
 	defer cp.Close()
 
@@ -74,5 +69,14 @@ func parseEvent(msg *sarama.ConsumerMessage) {
 	err := json.Unmarshal(msg.Value, &m)
 	Check(err)
 	// fmt.Println("events->", m.Type, m.From, m.Action, m.Actor.Attributes.ComDockerSwarmTaskName)
-	fmt.Println("events->", m)
+	if m.Type == "container" && (m.Status == "start" || m.Status == "die" || m.Status == "oom") {
+		tm := time.Unix(int64(m.Time), 0)
+		str := fmt.Sprintf("%s --> %s at %s", m.Actor.Attributes.ComDockerSwarmTaskName, m.Status, tm)
+		fmt.Println(str)
+		c := fmt.Sprintf("echo '%s' | babl -async -c production.babl.sh:4445 babl/events -e EVENT=babl:error", str)
+		fmt.Println("out", c)
+		_, err := exec.Command("bash", []string{"-c", c}...).Output()
+		Check(err)
+	}
+
 }
