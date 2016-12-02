@@ -137,12 +137,12 @@ func logRaw(entries ...string) {
 }
 
 func logLevel(m Msg) rune {
-	if Success.MatchString(m.Message) {
-		return 'S'
-	} else if Error.MatchString(m.Message) {
+	if Error.MatchString(m.Message) {
 		return 'E'
 	} else if Warning.MatchString(m.Message) {
 		return 'W'
+	} else if Success.MatchString(m.Message) {
+		return 'S'
 	} else {
 		return 'I'
 	}
